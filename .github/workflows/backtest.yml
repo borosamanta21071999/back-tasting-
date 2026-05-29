@@ -1,0 +1,38 @@
+name: XAUUSD Backtest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install packages
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy zstandard gdown
+
+      - name: Download Google Drive folder
+        run: |
+          mkdir -p data outputs
+          gdown --folder "https://drive.google.com/drive/folders/1zFpQJyRMoPLfmLGgCqb1aiFYqFhb07x1?usp=sharing" -O data
+
+      - name: Run backtest
+        run: |
+          python backtest.py --data data --out outputs
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        with:
+          name: xauusd-backtest-results
+          path: outputs/
