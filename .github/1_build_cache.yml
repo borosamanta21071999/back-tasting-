@@ -1,0 +1,49 @@
+name: 1. Build Candle Cache
+
+on:
+  workflow_dispatch:
+    inputs:
+      gdrive_folder_url:
+        description: 'Google Drive ok folder URL (public link)'
+        required: true
+
+jobs:
+  build-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install zstd
+        run: sudo apt-get install -y zstd libzstd-dev
+
+      - name: Build candle cache
+        env:
+          GDRIVE_FOLDER_URL: ${{ github.event.inputs.gdrive_folder_url }}
+          DATA_DIR: /tmp/xauusd_data
+          CACHE_DIR: cache
+        run: |
+          mkdir -p /tmp/xauusd_data
+          python backtest.py build
+
+      - name: Upload cache as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: candles-cache
+          path: cache/candles_1m.csv
+          retention-days: 90
+
+      - name: Commit cache to repo
+        run: |
+          git config user.name "Backtest Bot"
+          git config user.email "bot@backtest"
+          git add cache/
+          git diff --staged --quiet || git commit -m "Cache: 1m candles built $(date -u +%Y-%m-%d)"
+          git push
