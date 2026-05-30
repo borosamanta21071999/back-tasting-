@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       gdrive_folder_url:
-        description: 'Google Drive ok folder URL (public link)'
+        description: 'Google Drive ok folder URL'
         required: true
 
 jobs:
@@ -33,17 +33,17 @@ jobs:
           mkdir -p /tmp/xauusd_data
           python backtest.py build
 
-      - name: Upload cache as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: candles-cache
-          path: cache/candles_1m.csv
-          retention-days: 90
-
       - name: Commit cache to repo
         run: |
           git config user.name "Backtest Bot"
           git config user.email "bot@backtest"
           git add cache/
-          git diff --staged --quiet || git commit -m "Cache: 1m candles built $(date -u +%Y-%m-%d)"
+          git diff --staged --quiet || git commit -m "Cache built $(date -u +%Y-%m-%d)"
           git push
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: candles-cache
+          path: cache/candles_1m.csv
+          retention-days: 90
