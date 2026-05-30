@@ -1,0 +1,42 @@
+name: 2. Run Strategy Backtest
+
+on:
+  workflow_dispatch:
+
+jobs:
+  run-backtest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install zstd
+        run: sudo apt-get install -y zstd libzstd-dev
+
+      - name: Run backtest
+        env:
+          CACHE_DIR: cache
+        run: |
+          python backtest.py run
+
+      - name: Upload results as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backtest-results
+          path: backtest_results/
+          retention-days: 90
+
+      - name: Commit results to repo
+        run: |
+          git config user.name "Backtest Bot"
+          git config user.email "bot@backtest"
+          git add backtest_results/
+          git diff --staged --quiet || git commit -m "Results: backtest $(date -u +%Y-%m-%d_%H%M)"
+          git push
